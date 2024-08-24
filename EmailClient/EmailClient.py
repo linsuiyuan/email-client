@@ -73,10 +73,15 @@ class EmailClient:
             }
         return email_obj
 
+    def read_email_login(self, mail):
+        """不同的邮件平台，登录流程可能不太一样，
+        这里单独提取出来，可由子类重写"""
+        mail.login(self.username, self.password)
+
     def read_emails(self, criteria: str, mailbox="INBOX", limit=1):
         try:
             with IMAP4_SSL_With_Ctx(self.email_host) as mail:
-                mail.login(self.username, self.password)
+                self.read_email_login(mail)
                 
                 mail.select(mailbox=mailbox)
                 
