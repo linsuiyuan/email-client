@@ -25,7 +25,7 @@ env/
 *.log
 
 # 忽略环境变量文件
-.env
+.env*
 
 # 忽略pip打包的文件夹
 dist/
