@@ -1,7 +1,7 @@
 import imaplib
 import json
 import os
-from EmailClient import EmailClient
+from EmailClients import EmailClient
 
 class NeteaseEmailClient(EmailClient):
 
