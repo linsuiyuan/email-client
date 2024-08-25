@@ -1,5 +1,6 @@
 import email
 from email.header import decode_header
+from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import imaplib
@@ -78,7 +79,7 @@ class EmailClient:
         这里单独提取出来，可由子类重写"""
         mail.login(self.username, self.password)
 
-    def read_emails(self, criteria: str, mailbox="INBOX", limit=1):
+    def read_emails(self, criteria: str, mailbox="INBOX", limit=1, seen=False, delete=False):
         try:
             with IMAP4_SSL_With_Ctx(self.email_host['imap']) as mail:
                 self.read_email_login(mail)
@@ -90,7 +91,8 @@ class EmailClient:
                 
                 email_ids = data[0].split()
                 # 根据限制过滤个数
-                email_ids = email_ids[:limit]
+                if limit > 0:
+                    email_ids = email_ids[:limit]
 
                 email_objects = []
                 
@@ -100,18 +102,36 @@ class EmailClient:
                     raw_email = msg_data[0][1]
                     email_object = self._parse_email(raw_email=raw_email)
                     email_objects.append(email_object)
+                
+                # 如果要删除邮件就不需要标记已读了，所以这里使用if elif
+                if delete:
+                    for email_id in email_ids:
+                        mail.store(email_id, '+FLAGS', '\\Deleted')  # 标记邮件为删除
+                        mail.expunge()  # 永久删除已标记的邮件
+                elif seen:
+                    for email_id in email_ids:
+                        mail.store(email_id, "+FLAGS", "\\Seen")
 
                 return email_objects
         except Exception as ex:
             raise ex
             # return False, f"读取邮件失败：{ex}"
 
-    def send_email(self, to: str, subject: str, content: str):
+    def send_email(self, to: str, subject: str, content: str, attachments=None):
         msg = MIMEMultipart()
         msg['From'] = self.username
         msg['To'] = to
         msg['Subject'] = subject
         msg.attach(MIMEText(content, 'plain'))
+
+        # 如果有附件，则添加附件
+        if attachments:
+            for filename in attachments:
+                with open(filename, 'rb') as fr:
+                    part = MIMEApplication(fr.read())
+                    part.add_header('Content-Disposition', 'attachment', filename=filename)
+                    msg.attach(part)
+
         try:
             with smtplib.SMTP(host=self.email_host['smtp']) as server:
                 server.starttls()  # 开启TLS加密
@@ -120,4 +140,3 @@ class EmailClient:
                 return True, "发送成功"
         except Exception as ex:
             raise ex
-            # return False, f"发送邮件失败：{ex}"
