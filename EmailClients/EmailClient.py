@@ -3,35 +3,22 @@ from email.header import decode_header
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from imaplib import IMAP4_SSL
-import smtplib
-
-
-class IMAP4_SSL_With_Ctx(IMAP4_SSL):
-    """包装 IMAP4_SSL，使其可以使用 with 语句"""
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.logout()
+from .IMAP_SMTP_Factory import IMAP_SMTP_Factory
 
 
 class EmailClient:
     """邮件客户端，可接收和发送邮件"""
 
-    def __init__(self, username: str, password: str, email_host: dict):
+    def __init__(self, username: str, password: str):
         """初始化
 
         Args:
             username (str): 邮件地址
             password (str): 邮件密码
-            email_host (dict): 邮件imap和smtp服务器
         """
         self.username = username
         self.password = password
-        self.email_host = email_host
-
+    
     def _parse_email(self, raw_email) -> dict:
         """对原始邮件进行解析
 
@@ -92,14 +79,6 @@ class EmailClient:
         }
         return email_obj
 
-    def read_email_login(self, mail: IMAP4_SSL):
-        """不同的邮件平台，登录流程可能不太一样，这里单独提取出来，可由子类重写
-
-        Args:
-            mail (IMAP4_SSL): imap客户端
-        """
-        mail.login(self.username, self.password)
-
     def read_emails(self, criteria: str, mailbox="INBOX", limit=1, seen=False, delete=False) -> list[dict]:
         """读取邮件主方法
 
@@ -117,8 +96,8 @@ class EmailClient:
             list[dict]: 邮件列表
         """
         try:
-            with IMAP4_SSL_With_Ctx(self.email_host['imap']) as mail:
-                self.read_email_login(mail)
+            with IMAP_SMTP_Factory.create_imap(self.username) as mail:
+                mail.login(self.username, self.password)
 
                 mail.select(mailbox=mailbox)
 
@@ -182,7 +161,7 @@ class EmailClient:
                     msg.attach(part)
 
         try:
-            with smtplib.SMTP(host=self.email_host['smtp']) as server:
+            with IMAP_SMTP_Factory.create_smtp(self.username) as server:
                 server.starttls()  # 开启TLS加密
                 server.login(user=self.username, password=self.password)
                 server.send_message(msg)
