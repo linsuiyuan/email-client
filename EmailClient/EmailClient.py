@@ -80,7 +80,7 @@ class EmailClient:
 
     def read_emails(self, criteria: str, mailbox="INBOX", limit=1):
         try:
-            with IMAP4_SSL_With_Ctx(self.email_host) as mail:
+            with IMAP4_SSL_With_Ctx(self.email_host['imap']) as mail:
                 self.read_email_login(mail)
                 
                 mail.select(mailbox=mailbox)
@@ -108,8 +108,10 @@ class EmailClient:
 
 
 if __name__ == '__main__':
+    email_host_str = os.getenv('EMAIL_HOST')
+    email_host = json.loads(email_host_str)
     client = EmailClient(username=os.getenv('USERNAME'),
                          password=os.getenv('PASSWORD'),
-                         email_host=os.getenv('EMAIL_HOST'))
+                         email_host=email_host)
     emails = client.read_emails(criteria="UNSEEN")
     print(json.dumps(emails, ensure_ascii=False))
