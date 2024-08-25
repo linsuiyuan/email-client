@@ -1,15 +1,15 @@
 from EmailClients import EmailClient
 from EmailClients import NeteaseEmailClient
 
-class EmailClientFactory:
 
+class EmailClientFactory:
     domain_to_host = {
         '139.com': {'imap': 'imap.139.com', 'smtp': 'smtp.139.com'},
         'qq.com': {'imap': 'imap.qq.com', 'smtp': 'smtp.qq.com'},
         'gmail.com': {'imap': 'imap.gmail.com', 'smtp': 'smtp.gmail.com'},
         'outlook.com': {'imap': 'outlook.office365.com', 'smtp': 'smtp-mail.outlook.com'},
         'icloud.com': {'imap': 'imap.mail.me.com', 'smtp': 'smtp.mail.me.com'},
-        
+
         '163.com': {'imap': 'imap.163.com', 'smtp': 'smtp.163.com'},
     }
 
