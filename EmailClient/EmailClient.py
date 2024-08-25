@@ -1,5 +1,7 @@
 import email
-from email.header import decode_header
+from email.header import Header, decode_header
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 import json
 import os
 import imaplib
@@ -106,4 +108,18 @@ class EmailClient:
             raise ex
             # return False, f"读取邮件失败：{ex}"
 
-
+    def send_email(self, to: str, subject: str, content: str):
+        msg = MIMEMultipart()
+        msg['From'] = self.username
+        msg['To'] = to
+        msg['Subject'] = subject
+        msg.attach(MIMEText(content, 'plain'))
+        try:
+            with smtplib.SMTP(host=self.email_host['smtp']) as server:
+                server.starttls()  # 开启TLS加密
+                server.login(user=self.username, password=self.password)
+                server.send_message(msg)
+                return True, "发送成功"
+        except Exception as ex:
+            raise ex
+            # return False, f"发送邮件失败：{ex}"
