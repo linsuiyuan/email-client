@@ -1,9 +1,7 @@
 import email
-from email.header import Header, decode_header
+from email.header import decode_header
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-import json
-import os
 import imaplib
 import smtplib
 
@@ -17,7 +15,7 @@ class IMAP4_SSL_With_Ctx(imaplib.IMAP4_SSL):
 
 class EmailClient:
 
-    def __init__(self, username: str, password: str, email_host: str):
+    def __init__(self, username: str, password: str, email_host: dict):
         self.username = username
         self.password = password
         self.email_host = email_host
