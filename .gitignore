@@ -9,7 +9,9 @@ __pycache__/
 *.pyo
 
 # 忽略测试目录
-/tests/
+# 暂时不忽略
+#/tests/
+
 # 忽略 pytest 缓存
 .pytest_cache/
 # 忽略pytest配置文件
