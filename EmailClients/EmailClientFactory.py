@@ -15,6 +15,18 @@ class EmailClientFactory:
 
     @staticmethod
     def generate_email_client(username: str, password: str) -> EmailClient:
+        """根据传入的邮件地址，选择相应的imap和smtp服务器，返回相应的EmailClient
+
+        Args:
+            username (str): 邮件地址
+            password (str): 邮件密码
+
+        Raises:
+            Exception: 如果没有相应的服务器，则抛出异常
+
+        Returns:
+            EmailClient: EmailClient
+        """
         domain = username.split('@')[-1]
         if domain not in EmailClientFactory.domain_to_host:
             raise Exception(f'该邮箱未设置服务器：{username}')

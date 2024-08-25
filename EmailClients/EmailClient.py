@@ -3,11 +3,11 @@ from email.header import decode_header
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-import imaplib
+from imaplib import IMAP4_SSL
 import smtplib
 
-class IMAP4_SSL_With_Ctx(imaplib.IMAP4_SSL):
-    """包装 imaplib.IMAP4_SSL，使其可以使用 with 语句"""
+class IMAP4_SSL_With_Ctx(IMAP4_SSL):
+    """包装 IMAP4_SSL，使其可以使用 with 语句"""
     def __enter__(self):
         return self
 
@@ -15,13 +15,29 @@ class IMAP4_SSL_With_Ctx(imaplib.IMAP4_SSL):
         self.logout()
 
 class EmailClient:
+    """邮件客户端，可接收和发送邮件"""
 
     def __init__(self, username: str, password: str, email_host: dict):
+        """初始化
+
+        Args:
+            username (str): 邮件地址
+            password (str): 邮件密码
+            email_host (dict): 邮件imap和smtp服务器
+        """
         self.username = username
         self.password = password
         self.email_host = email_host
     
-    def _parse_email(self, raw_email):
+    def _parse_email(self, raw_email) -> dict:
+        """对原始邮件进行解析
+
+        Args:
+            raw_email (_type_): 原始邮件
+
+        Returns:
+            dict: 含有邮件主要信息的dict
+        """
 
         # 解析邮件的主要部分
         def decode_mime_words(mime_words):
@@ -74,12 +90,30 @@ class EmailClient:
             }
         return email_obj
 
-    def read_email_login(self, mail):
-        """不同的邮件平台，登录流程可能不太一样，
-        这里单独提取出来，可由子类重写"""
+    def read_email_login(self, mail: IMAP4_SSL):
+        """不同的邮件平台，登录流程可能不太一样，这里单独提取出来，可由子类重写
+
+        Args:
+            mail (IMAP4_SSL): imap客户端
+        """
         mail.login(self.username, self.password)
 
-    def read_emails(self, criteria: str, mailbox="INBOX", limit=1, seen=False, delete=False):
+    def read_emails(self, criteria: str, mailbox="INBOX", limit=1, seen=False, delete=False) -> list[dict]:
+        """读取邮件主方法
+
+        Args:
+            criteria (str): 查询邮件的条件
+            mailbox (str, optional): 邮件文件夹. 默认 "INBOX".
+            limit (int, optional): 数量限制. 默认 1.
+            seen (bool, optional): 标记已读. 默认 False.
+            delete (bool, optional): 删除邮件. 默认 False.
+
+        Raises:
+            ex: 读取邮件出错则抛出异常
+
+        Returns:
+            list[dict]: 邮件列表
+        """
         try:
             with IMAP4_SSL_With_Ctx(self.email_host['imap']) as mail:
                 self.read_email_login(mail)
@@ -115,9 +149,22 @@ class EmailClient:
                 return email_objects
         except Exception as ex:
             raise ex
-            # return False, f"读取邮件失败：{ex}"
 
     def send_email(self, to: str, subject: str, content: str, attachments=None):
+        """发送邮件
+
+        Args:
+            to (str): 接收人
+            subject (str): 主题
+            content (str): 邮件内容
+            attachments (_type_, optional): 邮件附件. 默认 None.
+
+        Raises:
+            ex: 发送邮件失败则抛出异常
+
+        Returns:
+            _type_: 发送邮件结果
+        """
         msg = MIMEMultipart()
         msg['From'] = self.username
         msg['To'] = to
