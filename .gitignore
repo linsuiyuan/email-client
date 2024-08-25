@@ -8,8 +8,12 @@ __pycache__/
 *.pyc
 *.pyo
 
+# 忽略测试目录
+/tests/
 # 忽略 pytest 缓存
 .pytest_cache/
+# 忽略pytest配置文件
+pytest.ini
 
 # 忽略虚拟环境目录
 venv/
