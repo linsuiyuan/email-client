@@ -3,7 +3,9 @@ from email.header import decode_header
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from .IMAP_SMTP_Factory import IMAP_SMTP_Factory
+from typing import List, Dict
+
+from .imap_smtp_factory import IMAP_SMTP_Factory
 
 
 class EmailClient:
@@ -18,8 +20,8 @@ class EmailClient:
         """
         self.username = username
         self.password = password
-    
-    def _parse_email(self, raw_email) -> dict:
+
+    def _parse_email(self, raw_email) -> Dict:
         """对原始邮件进行解析
 
         Args:
@@ -30,11 +32,11 @@ class EmailClient:
         """
 
         # 解析邮件的主要部分
-        def decode_mime_words(mime_words):
+        def _decode_mime_words(mime_words):
             decoded_words = []
-            for word, charset in decode_header(mime_words):
+            for word, charset_ in decode_header(mime_words):
                 if isinstance(word, bytes):
-                    word = word.decode(charset or 'utf-8')
+                    word = word.decode(charset_ or 'utf-8')
                 decoded_words.append(word)
             return ''.join(decoded_words)
 
@@ -42,9 +44,9 @@ class EmailClient:
         msg = email.message_from_bytes(raw_email)
 
         # 提取邮件的基本信息
-        from_address = decode_mime_words(msg['From'])
-        to_address = decode_mime_words(msg['To'])
-        subject = decode_mime_words(msg['Subject'])
+        from_address = _decode_mime_words(msg['From'])
+        to_address = _decode_mime_words(msg['To'])
+        subject = _decode_mime_words(msg['Subject'])
         date = msg['Date']
 
         # 遍历邮件的每个部分
@@ -79,11 +81,22 @@ class EmailClient:
         }
         return email_obj
 
-    def read_emails(self, criteria: str, mailbox="INBOX", limit=1, seen=False, delete=False) -> list[dict]:
+    def read_emails(self, criteria: str, mailbox="INBOX", limit=1, seen=False, delete=False) -> List[Dict]:
         """读取邮件主方法
 
         Args:
-            criteria (str): 查询邮件的条件
+            criteria (str): 查询邮件的条件。支持以下格式:
+                - 'ALL': 所有邮件
+                - 'UNSEEN': 未读邮件
+                - 'SEEN': 已读邮件
+                - 'FROM "someone@example.com"': 来自特定发件人的邮件
+                - 'TO "someone@example.com"': 发送给特定收件人的邮件
+                - 'SUBJECT "test"': 主题包含特定文字的邮件
+                - 'SINCE "01-Jan-2020"': 某个日期之后的邮件
+                - 'BEFORE "01-Jan-2020"': 某个日期之前的邮件
+                - 'LARGER 1000': 大于1000字节的邮件
+                - 'SMALLER 1000': 小于1000字节的邮件
+                多个条件可以组合使用，如: 'UNSEEN SUBJECT "test"'
             mailbox (str, optional): 邮件文件夹. 默认 "INBOX".
             limit (int, optional): 数量限制. 默认 1.
             seen (bool, optional): 标记已读. 默认 False.
